@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --cyber-cyan: #00f0ff;
+  --cyber-glow: #00f0ff80;
+  --cyber-dark: #0a0e1a;
+  --cyber-darker: #050810;
+  font-family: "Rajdhani", "Orbitron", system-ui, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.95);
+  background-color: var(--cyber-darker);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background: 
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(ellipse at center, #0a0e1a 0%, #050810 100%);
+  background-size: 50px 50px, 50px 50px, 100% 100%;
+  background-position: 0 0, 0 0, center;
+  animation: gridShift 20s linear infinite;
+}
+
+@keyframes gridShift {
+  0% { background-position: 0 0, 0 0, center; }
+  100% { background-position: 50px 50px, 50px 50px, center; }
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+/* Cyber glow utilities */
+.cyber-glow {
+  box-shadow: 0 0 10px var(--cyber-glow), 0 0 20px var(--cyber-glow), inset 0 0 10px var(--cyber-glow);
+}
+
+.cyber-text-glow {
+  text-shadow: 0 0 10px var(--cyber-cyan), 0 0 20px var(--cyber-glow);
+}
+
+.cyber-border {
+  position: relative;
+  border: 1px solid var(--cyber-cyan);
+}
+
+.cyber-border::before,
+.cyber-border::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--cyber-cyan);
+  box-shadow: 0 0 5px var(--cyber-glow);
+}
+
+.cyber-border::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.cyber-border::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+}
