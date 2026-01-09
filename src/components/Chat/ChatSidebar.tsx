@@ -9,7 +9,6 @@ interface ChatSidebarProps {
     onNewConversation: () => void;
     onDeleteConversation: (id: string) => void;
     isCollapsed: boolean;
-    onToggleCollapse: () => void;
 }
 
 export const ChatSidebar = ({
@@ -19,13 +18,15 @@ export const ChatSidebar = ({
     onNewConversation,
     onDeleteConversation,
     isCollapsed,
-}: ChatSidebarProps) => {
+    className = "",
+}: ChatSidebarProps & { className?: string }) => {
     return (
         <div
             className={`
                 flex-shrink-0 bg-black border-r border-cyan-900/50 
                 transition-all duration-300 ease-in-out overflow-hidden
                 ${isCollapsed ? 'w-0' : 'w-72'}
+                ${className}
             `}
         >
             <div className="flex flex-col h-full w-72">
