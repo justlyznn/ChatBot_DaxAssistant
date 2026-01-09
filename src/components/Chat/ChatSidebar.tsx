@@ -19,7 +19,6 @@ export const ChatSidebar = ({
     onNewConversation,
     onDeleteConversation,
     isCollapsed,
-    onToggleCollapse,
 }: ChatSidebarProps) => {
     return (
         <div
