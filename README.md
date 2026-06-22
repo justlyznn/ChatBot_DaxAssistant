@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# DaxAssistant - Cryptocurrency Analyst Chatbot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+DaxAssistant is an AI-powered chatbot designed to act as an educational Cryptocurrency Analyst. It leverages the **Gemini 2.5 Flash** model to provide logical, data-driven, and risk-aware explanations about blockchain, DeFi, and cryptocurrency concepts.
 
-Currently, two official plugins are available:
+![DaxAssistant UI](./screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features ✨
 
-## React Compiler
+- **Educational Crypto Analysis**: Explains complex topics like Layer 1 vs Layer 2, Tokenomics, Staking, and Smart Contract risks.
+- **True API Streaming**: Real-time smooth streaming of responses directly from the Gemini API.
+- **Clean UI**: A sleek, modern, and readable interface inspired by Google Gemini.
+- **Conversation History**: Automatically saves your past conversations locally so you never lose your analysis history.
+- **Live Data Grounding**: Equipped with function calling to fetch real-time crypto prices via CoinGecko.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack 🛠
 
-## Expanding the ESLint configuration
+- **Frontend**: React 19, TypeScript, Vite
+- **Styling**: Tailwind CSS
+- **Markdown Parsing**: `react-markdown` + `remark-gfm`
+- **AI Integration**: `@google/genai` (Gemini SDK)
+- **Icons**: `lucide-react`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started 🚀
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 1. Clone the Repository
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/justlyznn/ChatBot_DaxAssistant.git
+cd ChatBot_DaxAssistant
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Install Dependencies
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+### 3. Environment Variables
+
+Create a `.env` file in the root directory and add your Google Gemini API key:
+
+```env
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### 4. Run the Development Server
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+## Disclaimer ⚠️
+
+DaxAssistant is designed for **educational purposes only**. It is explicitly instructed not to provide financial advice, price predictions, or buy/sell recommendations. Always do your own research (DYOR) before making any investment decisions in the cryptocurrency market.
