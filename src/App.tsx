@@ -1,4 +1,4 @@
-import { ChatContainer } from './components/Chat/ChatContainer'
+import { ChatContainer } from './features/chat/components/ChatContainer'
 
 function App() {
   return (

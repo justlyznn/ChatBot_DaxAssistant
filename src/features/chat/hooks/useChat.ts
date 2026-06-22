@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { type ChatMessage, generateResponse } from '../lib/gemini';
+import { type ChatMessage, generateResponse, generateConversationTitle } from '../../../services/api/gemini';
 import {
     type Conversation,
     getAllConversations,
     saveConversation,
     deleteConversation as deleteConversationFromStorage,
     createNewConversation as createConversation,
-    updateConversationTitle,
-} from '../lib/conversationStorage';
+} from '../../../services/storage/conversationStorage';
 
 export const useChat = () => {
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -49,11 +48,6 @@ export const useChat = () => {
             messages: updatedMessages,
             lastModifiedAt: now,
         };
-
-        // Always update title based on messages (will use first user message)
-        if (updatedMessages.length > 0) {
-            updatedConversation = updateConversationTitle(updatedConversation);
-        }
 
         saveConversation(updatedConversation);
 
@@ -111,6 +105,23 @@ export const useChat = () => {
         const updatedMessagesWithUser = [...messages, newUserMessage];
         saveActiveConversation(updatedMessagesWithUser);
 
+        // If this is the first message, generate a smart title
+        if (messages.length === 0) {
+            generateConversationTitle(text).then((smartTitle) => {
+                setConversations(prev => {
+                    const index = prev.findIndex(c => c.id === activeConversationId);
+                    if (index >= 0) {
+                        const updated = [...prev];
+                        updated[index] = { ...updated[index], title: smartTitle };
+                        // Persist the updated title
+                        saveConversation(updated[index]);
+                        return updated;
+                    }
+                    return prev;
+                });
+            }).catch(e => console.error('Failed to generate title', e));
+        }
+
         console.log('[useChat] sendMessage starting, setting isLoading true');
         setInput('');
         setIsLoading(true);
@@ -121,17 +132,35 @@ export const useChat = () => {
         console.log('[useChat] AbortController created');
 
         try {
-            const responseText = await generateResponse(messages, text, abortControllerRef.current.signal);
+            const newAiMessageId = crypto.randomUUID();
+            let aiMessageText = "";
 
-            const newAiMessage: ChatMessage = {
-                id: crypto.randomUUID(),
+            const onChunk = (text: string) => {
+                aiMessageText = text;
+                const newAiMessage: ChatMessage = {
+                    id: newAiMessageId,
+                    role: 'model',
+                    text: aiMessageText,
+                    timestamp: Date.now(),
+                };
+                saveActiveConversation([...updatedMessagesWithUser, newAiMessage]);
+            };
+
+            const responseText = await generateResponse(
+                messages, 
+                text, 
+                abortControllerRef.current.signal,
+                onChunk
+            );
+
+            // Final save to ensure it's fully written
+            const finalAiMessage: ChatMessage = {
+                id: newAiMessageId,
                 role: 'model',
                 text: responseText,
                 timestamp: Date.now(),
             };
-
-            const updatedMessagesWithAi = [...updatedMessagesWithUser, newAiMessage];
-            saveActiveConversation(updatedMessagesWithAi);
+            saveActiveConversation([...updatedMessagesWithUser, finalAiMessage]);
             console.log('[useChat] Response received and saved');
         } catch (err: any) {
             // Don't show error if request was aborted by user

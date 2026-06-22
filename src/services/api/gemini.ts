@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { getCurrentPrice, searchCoin } from './coingecko';
 
 // API Key loaded from environment variable (set via Vite's import.meta.env)
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
@@ -10,11 +11,53 @@ export interface ChatMessage {
     timestamp: number;
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const ai = new GoogleGenAI({ apiKey: API_KEY || "missing_api_key" });
 
 // Grounding tool for Google Search
 const groundingTool = {
     googleSearch: {},
+};
+
+// CoinGecko Tools
+const coinGeckoTools: any = {
+    functionDeclarations: [
+        {
+            name: 'get_crypto_price',
+            description: 'Get current price of cryptocurrencies by their IDs. Also includes market cap and 24h volume.',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    coinIds: { type: Type.STRING, description: 'Comma-separated full coin IDs (e.g., "bitcoin,ethereum,solana"). DO NOT use symbols like BTC or ETH.' },
+                    currencies: { type: Type.STRING, description: 'Comma-separated currencies (e.g., "usd,idr"). Default to "usd,idr"' }
+                },
+                required: ['coinIds']
+            }
+        },
+        {
+            name: 'search_coin_id',
+            description: 'Search for a cryptocurrency by name or symbol to find its exact CoinGecko ID (needed for get_crypto_price).',
+            parameters: {
+                type: Type.OBJECT,
+                properties: {
+                    query: { type: Type.STRING, description: 'Search query (e.g., "BTC", "Solana")' }
+                },
+                required: ['query']
+            }
+        }
+    ]
+};
+
+export const generateConversationTitle = async (prompt: string): Promise<string> => {
+    if (!API_KEY) return "Percakapan Baru";
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `Buatkan judul pendek (maksimal 4 kata) dalam bahasa Indonesia untuk percakapan yang diawali dengan prompt ini: "${prompt}". Jangan gunakan tanda kutip pada hasilnya.`,
+        });
+        return response.text?.replace(/["']/g, '').trim() || "Percakapan Baru";
+    } catch (e) {
+        return "Percakapan Baru";
+    }
 };
 
 // System prompt for Cryptocurrency Analyst
@@ -112,7 +155,7 @@ IMPORTANT: When providing current prices, use available data (through grounding/
 
 Your responses should be educational, analytical, and risk-aware. Always prioritize helping users understand concepts deeply rather than giving them quick answers or shortcuts. Challenge assumptions, explain trade-offs, and maintain a neutral, analytical tone.`;
 
-export const generateResponse = async (history: ChatMessage[], prompt: string, signal?: AbortSignal): Promise<string> => {
+export const generateResponse = async (history: ChatMessage[], prompt: string, signal?: AbortSignal, onChunk?: (text: string) => void): Promise<string> => {
     if (!API_KEY) {
         throw new Error("VITE_GEMINI_API_KEY is not set. Please add it to your .env file.");
     }
@@ -138,25 +181,86 @@ export const generateResponse = async (history: ChatMessage[], prompt: string, s
     }
 
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: contents,
-            config: {
-                tools: [groundingTool],
-                systemInstruction: SYSTEM_PROMPT,
-            },
-        });
+        let finalResponseText = "";
+        let currentContents = [...contents];
+        let retryCount = 0;
 
-        // Check if aborted after receiving response
-        if (signal?.aborted) {
-            const error = new Error('Request aborted');
-            error.name = 'AbortError';
-            throw error;
+        while (retryCount < 3) {
+            const stream = await ai.models.generateContentStream({
+                model: "gemini-2.5-flash",
+                contents: currentContents,
+                config: {
+                    tools: [coinGeckoTools],
+                    systemInstruction: SYSTEM_PROMPT,
+                },
+            });
+
+            let isFunctionCall = false;
+            let call: any = null;
+            let currentText = "";
+            let functionCallChunk: any = null;
+
+            for await (const chunk of stream) {
+                if (signal?.aborted) {
+                    const error = new Error('Request aborted');
+                    error.name = 'AbortError';
+                    throw error;
+                }
+
+                if (chunk.functionCalls && chunk.functionCalls.length > 0) {
+                    isFunctionCall = true;
+                    call = chunk.functionCalls[0];
+                    functionCallChunk = chunk;
+                    break;
+                }
+
+                if (chunk.text) {
+                    currentText += chunk.text;
+                    if (onChunk) {
+                        onChunk(currentText);
+                    }
+                }
+            }
+
+            if (isFunctionCall && call) {
+                let functionResult: any = null;
+
+                try {
+                    if (call.name === 'get_crypto_price') {
+                        const args = call.args as any;
+                        functionResult = await getCurrentPrice(args.coinIds, args.currencies || 'usd,idr');
+                    } else if (call.name === 'search_coin_id') {
+                        const args = call.args as any;
+                        const searchResult = await searchCoin(args.query);
+                        functionResult = searchResult.slice(0, 3);
+                    }
+                } catch (e: any) {
+                    functionResult = { error: e.message };
+                }
+
+                if (functionCallChunk?.candidates?.[0]?.content) {
+                    currentContents.push(functionCallChunk.candidates[0].content as any);
+                }
+                
+                currentContents.push({
+                    role: 'user',
+                    parts: [{
+                        functionResponse: {
+                            name: call.name,
+                            response: functionResult
+                        }
+                    }]
+                } as any);
+                
+                retryCount++;
+                continue;
+            }
+
+            finalResponseText = currentText;
+            break;
         }
 
-        // Extract text from response
-        const text = response.text || "";
-        return text;
+        return finalResponseText;
     } catch (error: any) {
         // If the signal was aborted, throw an AbortError
         if (signal?.aborted) {

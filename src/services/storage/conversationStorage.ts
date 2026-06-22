@@ -1,4 +1,4 @@
-import type { ChatMessage } from './gemini';
+import type { ChatMessage } from '../api/gemini';
 
 const CONVERSATIONS_KEY = 'buildmate-conversations';
 const OLD_STORAGE_KEY = 'gemini-chat-history';
@@ -11,19 +11,7 @@ export interface Conversation {
     messages: ChatMessage[];
 }
 
-/**
- * Generate a title from the first user message
- */
-const generateTitle = (messages: ChatMessage[]): string => {
-    const firstUserMessage = messages.find(msg => msg.role === 'user');
-    if (!firstUserMessage) return 'Percakapan Baru';
 
-    const text = firstUserMessage.text.trim();
-    const maxLength = 50;
-
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-};
 
 /**
  * Migrate old single-conversation storage to new multi-conversation format
@@ -39,7 +27,7 @@ const migrateOldStorage = (): void => {
         // Create conversation from old messages
         const conversation: Conversation = {
             id: crypto.randomUUID(),
-            title: generateTitle(messages),
+            title: messages[0]?.text?.substring(0, 50) || 'Percakapan Lama',
             createdAt: messages[0]?.timestamp || Date.now(),
             lastModifiedAt: messages[messages.length - 1]?.timestamp || Date.now(),
             messages: messages,
@@ -138,12 +126,4 @@ export const createNewConversation = (): Conversation => {
     };
 };
 
-/**
- * Update conversation title based on messages
- */
-export const updateConversationTitle = (conversation: Conversation): Conversation => {
-    return {
-        ...conversation,
-        title: generateTitle(conversation.messages),
-    };
-};
+
