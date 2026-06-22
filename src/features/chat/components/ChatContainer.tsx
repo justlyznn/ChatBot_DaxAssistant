@@ -1,4 +1,4 @@
-import { Coins, Menu, X, Plus } from 'lucide-react';
+import { Menu, X, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { InputArea } from './InputArea';

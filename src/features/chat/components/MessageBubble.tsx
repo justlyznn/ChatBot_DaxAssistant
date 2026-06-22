@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { User, Bot } from 'lucide-react';
+import { User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../../../services/api/gemini';

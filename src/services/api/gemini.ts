@@ -13,10 +13,6 @@ export interface ChatMessage {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY || "missing_api_key" });
 
-// Grounding tool for Google Search
-const groundingTool = {
-    googleSearch: {},
-};
 
 // CoinGecko Tools
 const coinGeckoTools: any = {
